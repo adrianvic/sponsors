@@ -1,0 +1,50 @@
+name: Compile resources and deploy to GitHub Pages
+
+on:
+  push:
+
+permissions:
+  id-token: write
+  contents: read
+  pages: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    environment: sponsorkit-token
+    strategy:
+      matrix:
+        node-version: [25.x]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.1
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run sponsorkit
+        run: npx sponsorkit
+        env:
+          SPONSORKIT_GITHUB_TOKEN: ${{ secrets.SPONSORKIT_TOKEN }}
+          SPONSORKIT_GITHUB_LOGIN: "adrianvic"
+
+      - name: Remove .lock files
+        run: find sponsorkit/ -name ".lock" -type f -delete
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./sponsorkit
+
+      - name: Deploy GitHub Pages site
+        uses: actions/deploy-pages@v4.0.5
+        with:
+          token: ${{ github.token }}
+
+That's my workflow
